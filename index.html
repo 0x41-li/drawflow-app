@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- As you know some mete data -->
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+
+    <!-- Linking the library -->
+    <link rel="stylesheet" href="drawflow.min.css" />
+    <script src="drawflow.min.js"></script>
+
+    <!-- Styling -->
+    <style>
+      /* General stuff */
+      body,
+      html,
+      * {
+        padding: 0;
+        margin: 0;
+      }
+
+      .parent-drawflow {
+        background-image: linear-gradient(
+            to right,
+            #f1f1f1 1px,
+            transparent 1px
+          ),
+          linear-gradient(to bottom, #f1f1f1 1px, transparent 1px);
+        background-size: 25px 25px;
+      }
+
+      /* Here's the div element that we use, This div element is the box where all subboxes been added */
+      /* we give a height of 100vh, which is the height of the browser viewport */
+      .drawflow {
+        height: 100vh;
+      }
+
+      /* The add box button styling */
+      .add-btn {
+        position: absolute;
+        top: 100px;
+        left: 100px;
+        cursor: pointer;
+        background-color: rgb(250, 250, 250);
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        padding: 10px 20px;
+        text-align: center;
+        width: max-content;
+        z-index: 99999;
+      }
+
+      /* We overwrite the CSS of the library affecting every box with this CSS
+      So, we change the box padding, background color, for every box added */
+      .drawflow .drawflow-node {
+        background-color: rgb(240, 240, 240);
+        padding: 2px 10px;
+        text-align: center;
+      }
+
+      /* we overwrite the style of a selected box */
+      .drawflow .drawflow-node.selected {
+        background-color: rgb(220, 220, 220);
+      }
+
+      /* This the div element and its descendants styling, where the blue or pink options shows */
+      .choice-box {
+        position: absolute;
+        top: 4px;
+        left: 50%;
+        background-color: white;
+        border-radius: 4px;
+        border: 3px solid grey;
+        width: max-content;
+        padding: 10px 10px;
+        z-index: 9999;
+        cursor: pointer;
+      }
+
+      .choice-box div {
+        display: inline-block;
+      }
+
+      .blue-choice,
+      .pink-choice {
+        padding: 2px 0px;
+        text-align: center;
+        width: 80px;
+      }
+
+      .pink-choice {
+        position: relative;
+        left: 6px;
+      }
+
+      .separator {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        height: 100%;
+        width: 1px;
+        background-color: grey;
+      }
+
+      .choice-box .or {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0.8);
+        background-color: #fff;
+        z-index: 99999;
+        padding: 4px;
+        border-radius: 20px;
+        border: 1px solid grey;
+        width: 20px;
+        cursor: default;
+      }
+
+      /* The styling of the path's color, when no choice has been chosen, also overwriting the CSS of the library */
+      .drawflow .connection path.main-path {
+        stroke: #67a9f8;
+      }
+
+      .drawflow .connection path.main-path:hover {
+        stroke: #67a9f8;
+      }
+
+      /* The input element style, when it shows up */
+      .change-text-input {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80%;
+      }
+
+      /* the export button */
+
+      .export-btn {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        padding: 8px 40px;
+        background-color: rgb(114, 27, 27);
+        color: white;
+        font-family: Arial, Helvetica, sans-serif;
+        border: none;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+
+      .exported-data-wrapper {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 99999;
+        display: none;
+        width: calc(90vw - 10px);
+        height: calc(90vh - 10px);
+        overflow: auto;
+        background-color: rgb(230, 230, 230);
+        color: rgb(26, 26, 26);
+      }
+
+      .display-export-json {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+        font-family: monospace;
+        padding: 8px 10px;
+        box-sizing: border-box;
+      }
+
+      .ok-btn {
+        position: absolute;
+        right: 10px;
+        padding: 8px 40px;
+        background-color: #67a9f8;
+        color: white;
+        font-family: Arial, Helvetica, sans-serif;
+        cursor: pointer;
+      }
+
+      .zooming {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+      }
+
+      .zooming img {
+        width: 20px;
+        display: inline-block;
+        padding: 8px 10px;
+        background-color: rgb(225, 225, 225);
+        border-radius: 4px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- not so much, just the add-btn element, and the drawflow div element, which is need to give to the library as a container for the app -->
+    <main>
+      <div class="add-btn">Add Box</div>
+      <div id="drawflow"></div>
+      <div class="export-btn">Export</div>
+      <div class="exported-data-wrapper">
+        <pre class="display-export-json"></pre>
+        <div class="ok-btn">OK</div>
+      </div>
+      <div class="zooming">
+        <img src="images/search-minus-solid.svg" class="zoom-out" />
+        <img src="images/search-solid.svg" class="zoom-normal" />
+        <img src="images/search-plus-solid.svg" class="zoom-in" />
+      </div>
+    </main>
+
+    <script>
+      let tracker = 0; // Just a tracker for naming the boxes, the boxes are named by numbers, like box 1, box 2, box 3, and this is the tracker, we increment the tracker by 1, then we add a box.
+      const addBtn = document.querySelector(".add-btn"); // selecting the add box button.
+      const id = document.getElementById("drawflow"); // selecting the drawflow div element.
+      const drawflowTranslate = document.getElementsByClassName("drawflow");
+      const exportBtn = document.querySelector(".export-btn");
+      const dispayExportedJsonWrapper = document.querySelector(
+        ".exported-data-wrapper"
+      );
+      const dispayExportJsonDiv = document.querySelector(
+        ".display-export-json"
+      );
+      const okBtn = document.querySelector(".ok-btn");
+      let zoomingWrapper = document.querySelector(".zooming");
+      let zoomValue = 0;
+
+      const editor = new Drawflow(id); // This the way you declare a drawflow container, or functionality.
+
+      editor.start(); // start the drawflow app in the div container.
+
+      editor.on("zoom", (zoom_level) => {
+        zoomValue = zoom_level;
+      });
+
+      addBtn.addEventListener("click", addBox); // an event listener for the button when clicked
+      exportBtn.addEventListener("click", exportJson);
+      okBtn.addEventListener("click", exportJsonHide);
+      zoomingWrapper.addEventListener("click", zoomInOrOut);
+
+      /* when the add button is clicked */
+      function addBox() {
+        let box = "<div>Box " + tracker + "</div>"; // declaring the element that will be inside the box.
+        let data = { name: "a box" }; // I don't know exactly this is where is need, or for what. But should be defined.
+
+        tracker++; // increment the tracker by 1.add-btn
+
+        // parameters
+        //        module name, number of inputs, number of outputs, position x, position y, class, data, the element that will be inside the box */
+        editor.addNode("Home", 1, 1, 150, 300, "box-" + tracker, data, box); // adding the box. This the way of adding one.
+
+        // Selecting the output (the right citcle)
+        let output = document.querySelector(
+          "#node-" + tracker + " > div.outputs > div"
+        );
+
+        // selecting the element we add to the box, the div element with the text box + tracker exactly
+        let boxText = document.querySelector(
+          "#node-" + tracker + " > div.drawflow_content_node > div"
+        );
+
+        // event to listen when the output circle is clicked //
+        output.addEventListener("click", (e) => {
+          boxChoiceShow(e); // function to show the choice box
+        });
+
+        // event to listen when the box's text is double clicked, this work only for desktop, there's another way to implement it on all devices, even phones.
+        boxText.addEventListener("dblclick", (e) => {
+          changeTextBox(e); // Function giving the ability to change the text.
+        });
+      }
+
+      // when the output circle of a box is clicked
+      function boxChoiceShow(x) {
+        const currentBox = x.target.parentElement.parentElement; // storing the node element of the box, the first parent of the box.
+        const choiceBox = document.createElement("div"); // create a new div element for the choice box.
+        choiceBox.setAttribute("class", "choice-box"); // add a class to the new created div
+
+        // adding some HTMl inside the new div created.
+        choiceBox.innerHTML = `<div class="separator"></div><div class="blue-choice">Blue</div><div class="or">or</div><div class="pink-choice">Orange</d>`;
+        currentBox.appendChild(choiceBox); // add the new div to the current box.
+
+        // Listen for a click on the choice box
+        choiceBox.addEventListener("click", (e) => {
+          if (e.target.className.includes("blue-choice")) {
+            // if the blue choic is clicked
+            editor.on("connectionStart", function (id) {
+              // event when the user start making a connection using the line.
+              let paths = document.querySelectorAll(".connection"); // select the all lines in the document
+              for (const path of paths) {
+                // loop throught the lines elements, and select the one with only one className, which is the one is used currently, as all others who aready have a connection have more than one class
+                if (path.classList.length === 1) {
+                  path.firstElementChild.style.stroke = "#67A9F8"; // change the color of this path
+                }
+              }
+            });
+          } else if (e.target.className.includes("pink-choice")) {
+            // in the case of pink choices, the same walkthrough as the blue
+            editor.on("connectionStart", function (id) {
+              let paths = document.querySelectorAll(".connection");
+              for (const path of paths) {
+                if (path.classList.length === 1) {
+                  path.firstElementChild.style.stroke = "#F7BC4F";
+                }
+              }
+            });
+          }
+          choiceBox.style.display = "none"; // remove the choice box from displaying, when a color has been chosen.
+        });
+      }
+
+      // When the box's text is clicked two times.
+      function changeTextBox(e) {
+        let boxTextParent = e.target.parentElement; // the parent element of the div element text
+        let boxTextContent = e.target.textContent; // the text itself which is on the box
+
+        e.target.remove(); // remove the text element, which is a div
+        boxTextParent.innerHTML = `<input type="text" class="change-text-input" value="${boxTextContent}">`; // add an input instead, with the text of the box, that was there
+
+        let inputChange = document.querySelector(
+          "." + boxTextParent.className + " .change-text-input"
+        ); // select the input
+
+        // listen when the user click enter, if so
+        inputChange.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            let parentBox = e.target.parentElement; // select the parent element of the input element.
+            boxTextParent.innerHTML = `<div>${inputChange.value}</div>`; // replacing the HTML, inside the parent, which is an input, by a div element with the input's value
+            parentBox.firstElementChild.addEventListener("dblclick", (e) => {
+              // listen again the text box for another double click.
+              changeTextBox(e);
+            });
+          }
+        });
+      }
+
+      function exportJson() {
+        let exportData = editor.export();
+        exportData = JSON.stringify(exportData, null, 1);
+        dispayExportJsonDiv.textContent = exportData;
+        dispayExportedJsonWrapper.style.display = "block";
+        okBtn.style.top = dispayExportedJsonWrapper.scrollHeight - 44 + "px";
+      }
+
+      function exportJsonHide() {
+        dispayExportedJsonWrapper.style.display = "none";
+      }
+
+      function zoomInOrOut(e) {
+        if (e.target.className.includes("zoom-in")) {
+          editor.zoom_in();
+        } else if (e.target.className.includes("zoom-out")) {
+          editor.zoom_out();
+        } else if (e.target.className.includes("zoom-normal")) {
+          editor.zoom_reset();
+        }
+      }
+    </script>
+  </body>
+</html>
